@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Database Service
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=me_db
+    ports:
+      - "5432:5432"
+    networks:
+      - me-network
+    restart: always
+
+  # Backend Service
+  backend:
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/me_db
+    depends_on:
+      - db
+    networks:
+      - me-network
+    restart: always
+
+  # Frontend Service
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - me-network
+    restart: always
+
+networks:
+  me-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,105 @@
+from sqlalchemy.orm import Session
+from . import models, schemas
+import json
+
+def get_profile(db: Session):
+    return db.query(models.Profile).first()
+
+def create_profile(db: Session, profile: schemas.ProfileCreate):
+    # Check if profile exists
+    existing = get_profile(db)
+    if existing:
+        return existing
+    
+    db_profile = models.Profile(
+        name=profile.name,
+        email=profile.email,
+        education=profile.education,
+        work_links=profile.work_links
+    )
+    db.add(db_profile)
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile
+
+def update_profile(db: Session, profile: schemas.ProfileCreate):
+    db_profile = get_profile(db)
+    if not db_profile:
+        return create_profile(db, profile)
+    
+    db_profile.name = profile.name
+    db_profile.email = profile.email
+    db_profile.education = profile.education
+    db_profile.work_links = profile.work_links
+    
+    db.commit()
+    db.refresh(db_profile)
+    return db_profile
+
+def delete_profile(db: Session):
+    db_profile = get_profile(db)
+    if db_profile:
+        db.delete(db_profile)
+        db.commit()
+    return {"message": "Profile deleted"}
+
+def get_skills(db: Session, top: bool = False):
+    query = db.query(models.Skill)
+    if top:
+        query = query.filter(models.Skill.is_top == True)
+    return query.all()
+
+def create_skill(db: Session, skill: schemas.SkillCreate, profile_id: int):
+    # Check if exists
+    db_skill = db.query(models.Skill).filter(models.Skill.name == skill.name, models.Skill.profile_id == profile_id).first()
+    if db_skill:
+        return db_skill
+        
+    db_skill = models.Skill(**skill.dict(), profile_id=profile_id)
+    db.add(db_skill)
+    db.commit()
+    db.refresh(db_skill)
+    return db_skill
+
+def get_projects(db: Session, skill_name: str = None):
+    if skill_name:
+        return db.query(models.Project).join(models.Project.skills).filter(models.Skill.name.ilike(f"%{skill_name}%")).all()
+    return db.query(models.Project).all()
+
+def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int):
+    # Handle skills
+    skills = []
+    for s_name in project.skill_names:
+        # verify skill exists or create it? 
+        # For simplicity, we assume skills are managed separately or we create on the fly.
+        # Let's find or create attached to profile
+        s = db.query(models.Skill).filter(models.Skill.name == s_name, models.Skill.profile_id == profile_id).first()
+        if not s:
+            s = models.Skill(name=s_name, profile_id=profile_id)
+            db.add(s)
+            
+        skills.append(s)
+    
+    db_project = models.Project(
+        title=project.title,
+        description=project.description,
+        links=project.links,
+        profile_id=profile_id
+    )
+    db_project.skills = skills # relationship assignment
+    
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+def search(db: Session, query: str):
+    # Helper for search
+    projects = db.query(models.Project).filter(
+        (models.Project.title.ilike(f"%{query}%")) | 
+        (models.Project.description.ilike(f"%{query}%"))
+    ).all()
+    
+    skills = db.query(models.Skill).filter(models.Skill.name.ilike(f"%{query}%")).all()
+    
+    return {"projects": projects, "skills": skills}
