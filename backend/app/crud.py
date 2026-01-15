@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 import json
 
+# -----------------------------
+# Profile CRUD
+# -----------------------------
 def get_profile(db: Session):
     return db.query(models.Profile).first()
 
@@ -41,6 +44,9 @@ def delete_profile(db: Session):
         db.commit()
     return {"message": "Profile deleted"}
 
+# -----------------------------
+# Skills CRUD
+# -----------------------------
 def get_skills(db: Session, top: bool = False):
     query = db.query(models.Skill)
     if top:
@@ -49,7 +55,10 @@ def get_skills(db: Session, top: bool = False):
 
 def create_skill(db: Session, skill: schemas.SkillCreate, profile_id: int):
     # Check if exists
-    db_skill = db.query(models.Skill).filter(models.Skill.name == skill.name, models.Skill.profile_id == profile_id).first()
+    db_skill = db.query(models.Skill).filter(
+        models.Skill.name == skill.name, 
+        models.Skill.profile_id == profile_id
+    ).first()
     if db_skill:
         return db_skill
         
@@ -59,16 +68,24 @@ def create_skill(db: Session, skill: schemas.SkillCreate, profile_id: int):
     db.refresh(db_skill)
     return db_skill
 
+# -----------------------------
+# Projects CRUD
+# -----------------------------
 def get_projects(db: Session, skill_name: str = None):
     if skill_name:
-        return db.query(models.Project).join(models.Project.skills).filter(models.Skill.name.ilike(f"%{skill_name}%")).all()
+        return db.query(models.Project).join(models.Project.skills).filter(
+            models.Skill.name.ilike(f"%{skill_name}%")
+        ).all()
     return db.query(models.Project).all()
 
 def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int):
     # Handle skills
     skills = []
     for s_name in project.skill_names:
-        s = db.query(models.Skill).filter(models.Skill.name == s_name, models.Skill.profile_id == profile_id).first()
+        s = db.query(models.Skill).filter(
+            models.Skill.name == s_name, 
+            models.Skill.profile_id == profile_id
+        ).first()
         if not s:
             s = models.Skill(name=s_name, profile_id=profile_id)
             db.add(s)
@@ -87,26 +104,33 @@ def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int)
     db.refresh(db_project)
     return db_project
 
+# -----------------------------
+# Search helper
+# -----------------------------
 def search(db: Session, query: str):
-    # Search helper
     projects = db.query(models.Project).filter(
         (models.Project.title.ilike(f"%{query}%")) | 
         (models.Project.description.ilike(f"%{query}%"))
     ).all()
     
-    skills = db.query(models.Skill).filter(models.Skill.name.ilike(f"%{query}%")).all()
+    skills = db.query(models.Skill).filter(
+        models.Skill.name.ilike(f"%{query}%")
+    ).all()
     
     return {"projects": projects, "skills": skills}
 
 # -----------------------------
-# Seed / reset helpers
+# Seed / Reset helpers
 # -----------------------------
 def seed_database(db: Session):
     # Create profile
     profile_data = schemas.ProfileCreate(
         name="Manoranjan Sahoo",
         education="MCA in AI & ML",
-        work_links=json.dumps({"github": "https://github.com/Manoranjanchintu", "linkedin": "https://linkedin.com/in/manoranjansahoo"})
+        work_links=json.dumps({
+            "github": "https://github.com/Manoranjanchintu",
+            "linkedin": "https://linkedin.com/in/manoranjansahoo"
+        })
     )
     profile = create_profile(db, profile_data)
     
@@ -125,13 +149,19 @@ def seed_database(db: Session):
         {
             "title": "Smart Headcount",
             "description": "Project to manage employee headcount",
-            "links": json.dumps({"demo": "", "repo": "https://github.com/Manoranjanchintu/smart-headcount"}),
+            "links": json.dumps({
+                "demo": "",
+                "repo": "https://github.com/Manoranjanchintu/smart-headcount"
+            }),
             "skill_names": ["Python", "SQL"]
         },
         {
             "title": "Fitnex App",
             "description": "Preventive Health & Wellness App UI",
-            "links": json.dumps({"demo": "", "repo": "https://github.com/Manoranjanchintu/fitnex"}),
+            "links": json.dumps({
+                "demo": "",
+                "repo": "https://github.com/Manoranjanchintu/fitnex"
+            }),
             "skill_names": ["React", "FastAPI"]
         }
     ]
