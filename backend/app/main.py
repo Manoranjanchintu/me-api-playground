@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import models, database, crud
+from .routers import profile, projects, skills
 
 # Create tables
 models.Base.metadata.create_all(bind=database.engine)
@@ -17,6 +18,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Routers
+app.include_router(profile.router)
+app.include_router(projects.router)
+app.include_router(skills.router)
 
 @app.get("/")
 def root():
@@ -33,7 +39,6 @@ def search(q: str, db: Session = Depends(database.get_db)):
 # ----------------------------
 # DATABASE UTILITIES
 # ----------------------------
-
 @app.post("/reset-db")
 def reset_db(db: Session = Depends(database.get_db)):
     try:
@@ -44,6 +49,7 @@ def reset_db(db: Session = Depends(database.get_db)):
         db.commit()
 
         models.Base.metadata.create_all(bind=database.engine)
+
         return {"status": "database reset complete"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}

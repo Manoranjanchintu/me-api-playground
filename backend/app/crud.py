@@ -28,10 +28,12 @@ def update_profile(db: Session, profile: schemas.ProfileCreate):
     db_profile = get_profile(db)
     if not db_profile:
         return create_profile(db, profile)
+
     db_profile.name = profile.name
     db_profile.email = profile.email
     db_profile.education = profile.education
     db_profile.work_links = profile.work_links
+
     db.commit()
     db.refresh(db_profile)
     return db_profile
@@ -108,7 +110,11 @@ def search(db: Session, query: str):
         (models.Project.title.ilike(f"%{query}%")) |
         (models.Project.description.ilike(f"%{query}%"))
     ).all()
-    skills = db.query(models.Skill).filter(models.Skill.name.ilike(f"%{query}%")).all()
+
+    skills = db.query(models.Skill).filter(
+        models.Skill.name.ilike(f"%{query}%")
+    ).all()
+
     return {"projects": projects, "skills": skills}
 
 # -----------------------------

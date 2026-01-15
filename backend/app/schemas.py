@@ -19,7 +19,7 @@ class Skill(SkillBase):
 class ProjectBase(BaseModel):
     title: str
     description: Optional[str] = None
-    links: Optional[str] = None
+    links: Optional[str] = None  # JSON string
 
 class ProjectCreate(ProjectBase):
     skill_names: List[str] = []
@@ -33,16 +33,16 @@ class Project(ProjectBase):
 # Profile Schemas
 class ProfileBase(BaseModel):
     name: str
-    email: str
+    email: Optional[str] = None
     education: Optional[str] = None
-    work_links: Optional[str] = None
+    work_links: Optional[str] = None  # JSON string
 
 class ProfileCreate(ProfileBase):
     pass
 
 class Profile(ProfileBase):
     id: int
-    projects: List[Project] = []
     skills: List[Skill] = []
+    projects: List[Project] = []
     class Config:
         orm_mode = True

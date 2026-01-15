@@ -4,9 +4,10 @@ from .database import Base
 
 # Many-to-Many relationship between Projects and Skills
 project_skills = Table(
-    'project_skills', Base.metadata,
-    Column('project_id', Integer, ForeignKey('projects.id')),
-    Column('skill_id', Integer, ForeignKey('skills.id'))
+    "project_skills",
+    Base.metadata,
+    Column("project_id", Integer, ForeignKey("projects.id")),
+    Column("skill_id", Integer, ForeignKey("skills.id"))
 )
 
 class Profile(Base):
@@ -14,9 +15,9 @@ class Profile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
+    email = Column(String, nullable=True)
     education = Column(Text, nullable=True)
-    work_links = Column(Text, nullable=True)  # JSON as text
+    work_links = Column(Text, nullable=True)  # JSON stored as text
 
     skills = relationship("Skill", back_populates="profile", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="profile", cascade="all, delete-orphan")
@@ -39,7 +40,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    links = Column(Text, nullable=True)
+    links = Column(Text, nullable=True)  # JSON as text
     profile_id = Column(Integer, ForeignKey("profiles.id"))
 
     profile = relationship("Profile", back_populates="projects")
