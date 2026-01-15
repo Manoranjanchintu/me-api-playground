@@ -1,5 +1,5 @@
-from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Json
+from typing import List, Optional
+from pydantic import BaseModel
 
 # Skill Schemas
 class SkillBase(BaseModel):
@@ -12,7 +12,6 @@ class SkillCreate(SkillBase):
 
 class Skill(SkillBase):
     id: int
-    
     class Config:
         orm_mode = True
 
@@ -20,16 +19,14 @@ class Skill(SkillBase):
 class ProjectBase(BaseModel):
     title: str
     description: Optional[str] = None
-    links: Optional[str] = None # JSON string or plain text representation
-    # Could use Dict if we handle serialization manually, but keeping it simple for now as per minimal reqs
+    links: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
-    skill_names: List[str] = [] # List of skill names to associate
+    skill_names: List[str] = []
 
 class Project(ProjectBase):
     id: int
     skills: List[Skill] = []
-
     class Config:
         orm_mode = True
 
@@ -38,7 +35,7 @@ class ProfileBase(BaseModel):
     name: str
     email: str
     education: Optional[str] = None
-    work_links: Optional[str] = None # JSON string
+    work_links: Optional[str] = None
 
 class ProfileCreate(ProfileBase):
     pass
@@ -47,6 +44,5 @@ class Profile(ProfileBase):
     id: int
     projects: List[Project] = []
     skills: List[Skill] = []
-
     class Config:
         orm_mode = True
