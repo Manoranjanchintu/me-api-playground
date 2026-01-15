@@ -13,9 +13,8 @@ def create_profile(db: Session, profile: schemas.ProfileCreate):
     
     db_profile = models.Profile(
         name=profile.name,
-        email=profile.email,
         education=profile.education,
-        work_links=profile.work_links
+        work_links=profile.work_links  # JSON as text
     )
     db.add(db_profile)
     db.commit()
@@ -28,7 +27,6 @@ def update_profile(db: Session, profile: schemas.ProfileCreate):
         return create_profile(db, profile)
     
     db_profile.name = profile.name
-    db_profile.email = profile.email
     db_profile.education = profile.education
     db_profile.work_links = profile.work_links
     
@@ -70,14 +68,10 @@ def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int)
     # Handle skills
     skills = []
     for s_name in project.skill_names:
-        # verify skill exists or create it? 
-        # For simplicity, we assume skills are managed separately or we create on the fly.
-        # Let's find or create attached to profile
         s = db.query(models.Skill).filter(models.Skill.name == s_name, models.Skill.profile_id == profile_id).first()
         if not s:
             s = models.Skill(name=s_name, profile_id=profile_id)
             db.add(s)
-            
         skills.append(s)
     
     db_project = models.Project(
@@ -86,7 +80,7 @@ def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int)
         links=project.links,
         profile_id=profile_id
     )
-    db_project.skills = skills # relationship assignment
+    db_project.skills = skills
     
     db.add(db_project)
     db.commit()
@@ -94,7 +88,7 @@ def create_project(db: Session, project: schemas.ProjectCreate, profile_id: int)
     return db_project
 
 def search(db: Session, query: str):
-    # Helper for search
+    # Search helper
     projects = db.query(models.Project).filter(
         (models.Project.title.ilike(f"%{query}%")) | 
         (models.Project.description.ilike(f"%{query}%"))
@@ -103,3 +97,52 @@ def search(db: Session, query: str):
     skills = db.query(models.Skill).filter(models.Skill.name.ilike(f"%{query}%")).all()
     
     return {"projects": projects, "skills": skills}
+
+# -----------------------------
+# Seed / reset helpers
+# -----------------------------
+def seed_database(db: Session):
+    # Create profile
+    profile_data = schemas.ProfileCreate(
+        name="Manoranjan Sahoo",
+        education="MCA in AI & ML",
+        work_links=json.dumps({"github": "https://github.com/Manoranjanchintu", "linkedin": "https://linkedin.com/in/manoranjansahoo"})
+    )
+    profile = create_profile(db, profile_data)
+    
+    # Create skills
+    skill_names = ["Python", "React", "FastAPI", "SQL", "Machine Learning"]
+    for name in skill_names:
+        skill_data = schemas.SkillCreate(
+            name=name,
+            proficiency="Expert" if name in ["Python", "SQL"] else "Intermediate",
+            is_top=True if name in ["Python", "SQL"] else False
+        )
+        create_skill(db, skill_data, profile.id)
+    
+    # Create projects
+    project_samples = [
+        {
+            "title": "Smart Headcount",
+            "description": "Project to manage employee headcount",
+            "links": json.dumps({"demo": "", "repo": "https://github.com/Manoranjanchintu/smart-headcount"}),
+            "skill_names": ["Python", "SQL"]
+        },
+        {
+            "title": "Fitnex App",
+            "description": "Preventive Health & Wellness App UI",
+            "links": json.dumps({"demo": "", "repo": "https://github.com/Manoranjanchintu/fitnex"}),
+            "skill_names": ["React", "FastAPI"]
+        }
+    ]
+    
+    for p in project_samples:
+        project_data = schemas.ProjectCreate(
+            title=p["title"],
+            description=p["description"],
+            links=p["links"],
+            skill_names=p["skill_names"]
+        )
+        create_project(db, project_data, profile.id)
+    
+    return {"status": "seed completed"}
