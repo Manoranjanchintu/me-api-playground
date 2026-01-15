@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-
-const API_URL = "https://me-api-backend-1gn4.onrender.com";
+import { API_BASE_URL } from "./config";
+import "./App.css";
 
 function App() {
   const [profile, setProfile] = useState(null);
@@ -8,44 +8,50 @@ function App() {
   const [skills, setSkills] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/profile`)
+    fetch(`${API_BASE_URL}/profile`)
       .then(res => res.json())
-      .then(data => setProfile(data));
+      .then(setProfile);
 
-    fetch(`${API_URL}/projects`)
+    fetch(`${API_BASE_URL}/skills`)
       .then(res => res.json())
-      .then(data => setProjects(data));
+      .then(setSkills);
 
-    fetch(`${API_URL}/skills`)
+    fetch(`${API_BASE_URL}/projects`)
       .then(res => res.json())
-      .then(data => setSkills(data));
+      .then(setProjects);
   }, []);
 
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>Me API Playground</h1>
+    <div className="container">
+      <h1 className="title">Me API Playground</h1>
 
       {profile && (
-        <div>
+        <div className="card profile">
           <h2>{profile.name}</h2>
           <p>{profile.email}</p>
           <p>{profile.education}</p>
         </div>
       )}
 
-      <h3>Skills</h3>
-      <ul>
+      <h2 className="section-title">Skills</h2>
+      <div className="grid">
         {skills.map(skill => (
-          <li key={skill.id}>{skill.name} — {skill.proficiency}</li>
+          <div className="card" key={skill.id}>
+            <h3>{skill.name}</h3>
+            <p>{skill.proficiency}</p>
+          </div>
         ))}
-      </ul>
+      </div>
 
-      <h3>Projects</h3>
-      <ul>
+      <h2 className="section-title">Projects</h2>
+      <div className="grid">
         {projects.map(project => (
-          <li key={project.id}>{project.title}</li>
+          <div className="card" key={project.id}>
+            <h3>{project.title}</h3>
+            <p>{project.description}</p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
