@@ -34,3 +34,12 @@ def search(q: str, db: Session = Depends(database.get_db)):
 @app.get("/")
 def root():
     return {"message": "Welcome to Me-API Playground"}
+
+@app.get("/db-test")
+def db_test(db: Session = Depends(database.get_db)):
+    try:
+        # Simple query to check connection
+        result = db.execute("SELECT 1").fetchone()
+        return {"database_result": result[0], "status": "connected"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}
