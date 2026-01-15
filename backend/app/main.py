@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text   # <-- added this for raw SQL
 from . import models, database, crud
 from .routers import profile, projects, skills
 
@@ -12,7 +13,7 @@ app = FastAPI(title="Me-API Playground")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, specify domain
+    allow_origins=["*"],  # In production, specify domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,7 +40,7 @@ def root():
 def db_test(db: Session = Depends(database.get_db)):
     try:
         # Simple query to check connection
-        result = db.execute("SELECT 1").fetchone()
+        result = db.execute(text("SELECT 1")).fetchone()  # <-- wrap SQL in text()
         return {"database_result": result[0], "status": "connected"}
     except Exception as e:
         return {"status": "error", "detail": str(e)}
